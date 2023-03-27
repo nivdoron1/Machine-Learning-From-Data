@@ -208,7 +208,18 @@ def find_best_alpha(X_train, y_train, X_val, y_val, iterations):
     ###########################################################################
     # TODO: Implement the function and find the best alpha value.             #
     ###########################################################################
-    pass
+    try:
+        n = X_train.shape[1]  # Number of features
+    except IndexError:
+        n = 1
+    else:
+        n = X_train.shape[1]
+
+    for alpha in alphas:
+        theta = np.zeros(n)
+        theta, J_history = efficient_gradient_descent(X_train,y_train,theta,alpha,iterations)
+        loss = compute_cost(X_val,y_val,theta)
+        alpha_dict[alpha] = loss
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
