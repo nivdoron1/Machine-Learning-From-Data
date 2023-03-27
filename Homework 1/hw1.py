@@ -53,7 +53,7 @@ def apply_bias_trick(X):
         n = X.shape[1]
 
     ones = np.ones((m, 1))  # Column vector of ones
-    X = np.concatenate((ones, X.reshape(n, m)), axis=1)
+    X = np.concatenate((ones, X.reshape(m, n)), axis=1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
