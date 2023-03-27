@@ -174,7 +174,14 @@ def efficient_gradient_descent(X, y, theta, alpha, num_iters):
     ###########################################################################
     # TODO: Implement the efficient gradient descent optimization algorithm.  #
     ###########################################################################
-    pass
+    for i in range(num_iters):
+    h = X.dot(theta)
+    error = h - y
+    gradient = (1 / len(y)) * X.T.dot(error)
+    theta = theta - alpha * gradient
+    J_history.append(compute_cost(X, y, theta))
+    if i > 0 and abs(J_history[-1] - J_history[-2]) < 0.00000001:
+        break
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
