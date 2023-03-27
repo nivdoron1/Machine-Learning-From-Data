@@ -44,9 +44,15 @@ def apply_bias_trick(X):
     ###########################################################################
     # TODO: Implement the bias trick by adding a column of ones to the data.  #
     ###########################################################################
-    n = X.shape[0]
-    m = X.ndim
-    ones = np.ones((n, 1))
+    m = X.shape[0]  # Number of instances
+    try:
+        n = X.shape[1]  # Number of features
+    except IndexError:
+        n = 1
+    else:
+        n = X.shape[1]
+
+    ones = np.ones((m, 1))  # Column vector of ones
     X = np.concatenate((ones, X.reshape(n, m)), axis=1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
