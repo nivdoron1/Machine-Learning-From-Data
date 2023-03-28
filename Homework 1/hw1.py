@@ -247,7 +247,37 @@ def forward_feature_selection(X_train, y_train, X_val, y_val, best_alpha, iterat
     #####c######################################################################
     # TODO: Implement the function and find the best alpha value.             #
     ###########################################################################
-    pass
+    
+    X_train = apply_bias_trick(X_train)
+    X_val = apply_bias_trick(X_val)
+
+    try:
+        n = X_train.shape[1]  # Number of features
+    except IndexError:
+        n = 1
+    else:
+        n = X_train.shape[1]
+
+    for j in range(5):
+        best_feature_index = -1
+        best_cost = np.inf
+
+        for i in range(1,n):
+            if i not in selected_features:
+                features = selected_features + [i]
+                np.random.seed(42)
+                theta = np.random.random(size=len(features))
+                theta, J_history = efficient_gradient_descent(X_train[:, features], y_train, theta, best_alpha, iterations)
+                cost = compute_cost(X_val[:, features], y_val, theta)
+                features.remove(i)
+
+                if cost < best_cost:
+                    best_feature_index = i
+                    best_cost = cost
+
+        selected_features.append(best_feature_index)
+
+    selected_features = [x - 1 for x in selected_features]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
