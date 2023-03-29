@@ -22,8 +22,9 @@ def preprocess(X,y):
     ###########################################################################
     # TODO: Implement the normalization function.                             #
     ###########################################################################
-    X = (X - X.mean()) / X.std()
-    y = (y - y.mean()) / y.std()
+    X = (X - X.mean()) / (np.max(X) - np.min(X))
+    y = (y - y.mean()) / (np.max(y) - np.min(y))
+
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -44,16 +45,7 @@ def apply_bias_trick(X):
     ###########################################################################
     # TODO: Implement the bias trick by adding a column of ones to the data.  #
     ###########################################################################
-    m = X.shape[0]  # Number of instances
-    try:
-        n = X.shape[1]  # Number of features
-    except IndexError:
-        n = 1
-    else:
-        n = X.shape[1]
-
-    ones = np.ones((m, 1))  # Column vector of ones
-    X = np.concatenate((ones, X.reshape(m, n)), axis=1)
+    X = np.c_[(np.ones(len(X)),X)]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
