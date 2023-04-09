@@ -1,6 +1,6 @@
 ###### Your ID ######
-# ID1: 123456789
-# ID2: 987654321
+# ID1: 322547282
+# ID2: 337933568
 #####################
 
 # imports 
@@ -24,6 +24,8 @@ def preprocess(X,y):
     ###########################################################################
     X = (X - np.mean(X,axis=0)) / ( np.max(X,axis=0) - np.min(X,axis=0))
     y = (y - np.mean(y,axis=0)) / ( np.max(y,axis=0) - np.min(y,axis=0))
+
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -67,9 +69,9 @@ def compute_cost(X, y, theta):
     ###########################################################################
     # TODO: Implement the MSE cost function.                                  #
     ###########################################################################
-    n = y.shape[0]
+    n = len(y)
     h = X.dot(theta)
-    J = 1 / (2*n) * np.sum((h - y)**2)
+    J = 1 / (2 * n) * np.sum((h - y).dot(h - y))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -101,12 +103,13 @@ def gradient_descent(X, y, theta, alpha, num_iters):
     ###########################################################################
     # TODO: Implement the gradient descent optimization algorithm.            #
     ###########################################################################
+    m = len(y)
     for i in range(num_iters):
         h = X.dot(theta)
         error = h - y
-        gradient = (1 / len(y)) * X.T.dot(error)
+        gradient = (1/m) * X.T.dot(error)
         theta = theta - alpha * gradient
-        J_history.append(compute_cost(X, y, theta))
+        J_history.append(compute_cost(X,y,theta))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -164,14 +167,13 @@ def efficient_gradient_descent(X, y, theta, alpha, num_iters):
     ###########################################################################
     # TODO: Implement the efficient gradient descent optimization algorithm.  #
     ###########################################################################
+    m = len(y)
     for i in range(num_iters):
-    h = X.dot(theta)
-    error = h - y
-    gradient = (1 / len(y)) * X.T.dot(error)
-    theta = theta - alpha * gradient
-    J_history.append(compute_cost(X, y, theta))
-    if i > 0 and abs(J_history[-1] - J_history[-2]) < 0.00000001:
-        break
+        gradient = (1 / m) * X.T.dot(X.dot(theta) - y)
+        theta = theta - alpha * gradient
+        J_history.append(compute_cost(X, y, theta))
+        if i > 0 and abs(J_history[-1] - J_history[-2]) < 1e-8:
+            break
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -198,18 +200,13 @@ def find_best_alpha(X_train, y_train, X_val, y_val, iterations):
     ###########################################################################
     # TODO: Implement the function and find the best alpha value.             #
     ###########################################################################
-    try:
-        n = X_train.shape[1]  # Number of features
-    except IndexError:
-        n = 1
-    else:
-        n = X_train.shape[1]
-
+    theta_len = len(X_train.transpose())
     for alpha in alphas:
-        theta = np.zeros(n)
+        np.random.seed(42)
+        theta = np.random.random(size=theta_len)
         theta, J_history = efficient_gradient_descent(X_train,y_train,theta,alpha,iterations)
-        loss = compute_cost(X_val,y_val,theta)
-        alpha_dict[alpha] = loss
+        cost = compute_cost(X_val,y_val,theta)
+        alpha_dict[alpha] = cost
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -237,12 +234,12 @@ def forward_feature_selection(X_train, y_train, X_val, y_val, best_alpha, iterat
     #####c######################################################################
     # TODO: Implement the function and find the best alpha value.             #
     ###########################################################################
-    
+
     X_train = apply_bias_trick(X_train)
     X_val = apply_bias_trick(X_val)
 
     try:
-        n = X_train.shape[1]  # Number of features
+        n = X_train.shape[1]  
     except IndexError:
         n = 1
     else:
@@ -268,6 +265,7 @@ def forward_feature_selection(X_train, y_train, X_val, y_val, best_alpha, iterat
         selected_features.append(best_feature_index)
 
     selected_features = [x - 1 for x in selected_features]
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -289,8 +287,18 @@ def create_square_features(df):
     ###########################################################################
     # TODO: Implement the function to add polynomial features                 #
     ###########################################################################
-    for col in df.columns:
-        df_poly[col + '^2'] = df[col] ** 2
+
+    square_features = pd.DataFrame(df.apply(lambda x: x**2))
+    square_features.columns = [col + '^2' for col in square_features.columns]
+
+    interaction_features = pd.DataFrame()
+    for i, col1 in enumerate(df.columns):
+        for col2 in df.columns[i+1:]:
+            interaction_feature = pd.DataFrame(df[col1] * df[col2])
+            interaction_feature.columns = [col1 + '*' + col2]
+            interaction_features = pd.concat([interaction_features, interaction_feature], axis=1)
+
+    df_poly = pd.concat([df_poly, square_features, interaction_features], axis=1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
