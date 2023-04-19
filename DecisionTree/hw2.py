@@ -129,22 +129,26 @@ def goodness_of_split(data, feature, impurity_func, gain_ratio=False):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    groups = {}
-    feature_values = np.unique(data[:, feature])
-    for value in feature_values:
+    
+    n_samples = len(data)
+    impurity = impurity_func(data)
+
+    for value in set(data[:, feature]):
         subset = data[data[:, feature] == value]
+        n_subset = len(subset)
+        subset_impurity = impurity_func(subset)
         groups[value] = subset
-
-    subset_impurities = [impurity_func(subset) for subset in groups.values()]
-
-    total_impurity = impurity_func(data)
+        goodness += (n_subset / n_samples) * (impurity - subset_impurity)
 
     if gain_ratio:
-        intrinsic_value = -np.sum([(len(subset) / len(data)) * np.log2(len(subset) / len(data)) for subset in groups.values()])
-        goodness = (total_impurity - np.sum(subset_impurities)) / intrinsic_value
-    else:
-        goodness = total_impurity - np.sum(subset_impurities)
-        
+        split_info = 0
+        for value, subset in groups.items():
+            p = len(subset) / n_samples
+            split_info -= p * math.log2(p)
+            
+        if split_info > 0:
+            goodness /= split_info
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
