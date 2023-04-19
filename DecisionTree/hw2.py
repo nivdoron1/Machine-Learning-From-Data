@@ -76,10 +76,10 @@ def calc_gini(data):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    labels = data[:, -1]  # extract labels from the last column
-    unique_labels, counts = np.unique(labels, return_counts=True)  # count the number of occurrences of each label
-    probabilities = counts / len(labels)  # calculate the probabilities of each label
-    gini = 1 - np.sum(probabilities**2)  # calculate the Gini impurity
+    labels = data[:, -1]  
+    unique_labels, counts = np.unique(labels, return_counts=True)  
+    probabilities = counts / len(labels)  
+    gini = 1 - np.sum(probabilities**2)  
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -99,10 +99,10 @@ def calc_entropy(data):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    labels = data[:, -1]  # extract labels from the last column
-    unique_labels, counts = np.unique(labels, return_counts=True)  # count the number of occurrences of each label
-    probabilities = counts / len(labels)  # calculate the probabilities of each label
-    entropy = -np.sum(probabilities * np.log2(probabilities))  # calculate the entropy
+    labels = data[:, -1]  
+    unique_labels, counts = np.unique(labels, return_counts=True)  
+    probabilities = counts / len(labels)  
+    entropy = -np.sum(probabilities * np.log2(probabilities)) 
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -132,19 +132,14 @@ def goodness_of_split(data, feature, impurity_func, gain_ratio=False):
     groups = {}
     feature_values = np.unique(data[:, feature])
     for value in feature_values:
-        # split the data into two subsets based on the feature value
         subset = data[data[:, feature] == value]
         groups[value] = subset
 
-    # calculate the impurity of each subset
     subset_impurities = [impurity_func(subset) for subset in groups.values()]
 
-    # calculate the total impurity before the split
     total_impurity = impurity_func(data)
 
-    # calculate the goodness of split or the gain ratio
     if gain_ratio:
-        # calculate the intrinsic value of the split
         intrinsic_value = -np.sum([(len(subset) / len(data)) * np.log2(len(subset) / len(data)) for subset in groups.values()])
         goodness = (total_impurity - np.sum(subset_impurities)) / intrinsic_value
     else:
