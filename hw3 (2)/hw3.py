@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class conditional_independence():
 
     def __init__(self):
@@ -13,26 +10,26 @@ class conditional_independence():
         # We can do this by assuming certain relationships between the variables
         # For example, let's assume a relationship between X and Y: P(Y=1 | X=0) > P(Y=1)
         self.X_Y = {
-            (0, 0): None,
-            (0, 1): None,
-            (1, 0): None,
-            (1, 1): None,
+            (0, 0): 0.1,
+            (0, 1): 0.2,
+            (1, 0): 0.2,
+            (1, 1): 0.5,
         }  # P(X=x, Y=y)
 
         # Joint probabilities for X=x, C=c
         self.X_C = {
-            (0, 0): None,
-            (0, 1): None,
-            (1, 0): None,
-            (1, 1): None,
+            (0, 0): 0.15,
+            (0, 1): 0.15,
+            (1, 0): 0.35,
+            (1, 1): 0.35,
         }  # P(X=x, C=c)
 
         # Joint probabilities for Y=y, C=c
         self.Y_C = {
-            (0, 0): None,
-            (0, 1): None,
-            (1, 0): None,
-            (1, 1): None,
+            (0, 0): 0.15,
+            (0, 1): 0.15,
+            (1, 0): 0.35,
+            (1, 1): 0.35,
         }  # P(Y=y, C=c)
 
         # Conditional probabilities for X=x, Y=y, C=c based on the condition that X and Y are conditionally independent
@@ -52,27 +49,38 @@ class conditional_independence():
         """
         return True iff X and Y are dependent
         """
-        X = self.X
-        Y = self.Y
-        X_Y = self.X_Y
-        if np.isclose(X[0] * Y[0], X_Y[0, 0]) and np.isclose(X[0] * Y[1], X_Y[0, 1]) and np.isclose(X[1] * Y[0], X_Y[
-            1, 0]) and np.isclose(X[1] * Y[1], X_Y[1, 1]):
+        joint_X_Y = {
+            (0, 0): self.X_Y[(0, 0)],
+            (0, 1): self.X_Y[(0, 1)],
+            (1, 0): self.X_Y[(1, 0)],
+            (1, 1): self.X_Y[(1, 1)]
+        }
+
+    # Calculate the product of the marginal probability distributions of X and Y
+        marginal_X_Y = {
+            (0, 0): self.X[0]*self.Y[0],
+            (0, 1): self.X[0]*self.Y[1],
+            (1, 0): self.X[1]*self.Y[0],
+            (1, 1): self.X[1]*self.Y[1]
+        }
+
+                
+        # Check if X and Y are independent
+        if joint_X_Y == marginal_X_Y:
+            return True
+        else:
             return False
-        return True
 
     def is_X_Y_given_C_independent(self):
         """
         return True iff X_given_C and Y_given_C are indepndendent
         """
-        X = self.X
-        Y = self.Y
-        C = self.C
-        X_C = self.X_C
-        Y_C = self.Y_C
-        X_Y_C = self.X_Y_C
-
-        return all(np.isclose(X_C[x, c] * Y_C[y, c], X_Y_C[x, y, c]) for x in [0, 1] for y in [0, 1] for c in
-                   [0, 1])
+        for x in self.X.keys():
+            for y in self.Y.keys():
+                for c in self.C.keys():
+                    if self.X_Y_C[(x, y, c)] != self.X_C[(x, c)] * self.Y_C[(y, c)] / self.C[c]:
+                        return False
+        return True
 
 
 def poisson_log_pmf(k, rate):
