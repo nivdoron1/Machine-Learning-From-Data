@@ -250,7 +250,7 @@ def compute_accuracy(test_set, map_classifier):
     acc = None
     num_correct = 0
     for instance in test_set:
-        prediction = map_classifier.predict(instance)
+        prediction = map_classifier.predict(instance[:-1])
         true_label = instance[-1]
         if prediction == true_label:
             num_correct += 1
