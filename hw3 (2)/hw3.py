@@ -413,18 +413,65 @@ class DiscreteNBClassDistribution():
         """
         A class which computes and encapsulate the relevant probabilites for a discrete naive bayes
         distribution for a specific class. The probabilites are computed with laplace smoothing.
-
         Input
         - dataset: The dataset as a numpy array.
         - class_value: Compute the relevant parameters only for instances from the given class.
         """
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        self.dataset = dataset
+        self.class_value = class_value
+
+    def probability_x_given_a(self, n_ij, n_i, V_j):
+        """
+        Calculate the probability P(x_j | A_i) given the parameters.
+
+        Args:
+            n_ij (int): The number of occurrences of x_j in A_i.
+            n_i (int): The total number of items in A_i.
+            V_j (int): The number of distinct values in the domain of x_j.
+
+        Returns:
+            float: The probability P(x_j | A_i).
+        """
+        return EPSILLON if n_ij else (n_ij + 1) / (n_i + V_j)
+
+    def probability_x_given_a_product(self, n_ij_list, n_i_list, V_j_list):
+        """
+        Calculate the product of probabilities P(x | A_i) given the lists of parameters.
+
+        Args:
+            n_ij_list (list): A list of the number of occurrences of x_j in A_i.
+            n_i_list (list): A list of the total number of items in A_i.
+            V_j_list (list): A list of the number of distinct values in the domain of x_j.
+
+        Returns:
+            float: The product of probabilities P(x | A_i).
+        """
+        product = 1
+        for n_ij, n_i, V_j in zip(n_ij_list, n_i_list, V_j_list):
+            product *= self.probability_x_given_a(n_ij, n_i, V_j)
+        return product
+
+    def argmax_probability_product_np(self, P_A_i_list, n_ij_matrix, n_i_list, V_j_list):
+        """
+        Find the index i that maximizes the product of P(A_i) and P(x | A_i) using NumPy.
+
+        Args:
+            P_A_i_list (list): A list of P(A_i) probabilities.
+            n_ij_matrix (list): A list of lists containing n_ij values for each A_i.
+            n_i_list (list): A list of the total number of items in each A_i.
+            V_j_list (list): A list of the number of distinct values in the domain of x_j.
+
+        Returns:
+            int: The index i that maximizes the product of P(A_i) and P(x | A_i).
+        """
+        products = []
+
+        for P_A_i, n_ij_list in zip(P_A_i_list, n_ij_matrix):
+            product = P_A_i * self.probability_x_given_a_product(n_ij_list, n_i_list, V_j_list)
+            products.append(product)
+
+        max_index = np.argmax(products)
+        return max_index
 
     def get_prior(self):
         """
@@ -432,13 +479,9 @@ class DiscreteNBClassDistribution():
         according to the dataset distribution.
         """
         prior = None
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        num_class_instances = np.sum(self.dataset[:, -1] == self.class_value)
+        total_instances = self.dataset.shape[0]
+        prior = num_class_instances / total_instances
         return prior
 
     def get_instance_likelihood(self, x):
@@ -446,14 +489,12 @@ class DiscreteNBClassDistribution():
         Returns the likelihood of the instance under
         the class according to the dataset distribution.
         """
-        likelihood = None
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        class_instances = self.dataset[self.dataset[:, -1] == self.class_value]
+        n_i_list = np.sum(class_instances[:, -1] == self.class_value)
+        V_j_list = np.array([len(np.unique(self.dataset[:, col])) for col in range(self.dataset.shape[1] - 1)])
+        n_ij_list = [np.sum((class_instances[:, col] == x[col])) for col in range(self.dataset.shape[1] - 1)]
+
+        likelihood = self.probability_x_given_a_product(n_ij_list, [n_i_list] * len(n_ij_list), V_j_list)
         return likelihood
 
     def get_instance_posterior(self, x):
@@ -463,13 +504,9 @@ class DiscreteNBClassDistribution():
         * Ignoring p(x)
         """
         posterior = None
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        prior = self.get_prior()
+        likelihood = self.get_instance_likelihood(x)
+        posterior = prior * likelihood
         return posterior
 
 
@@ -479,53 +516,44 @@ class MAPClassifier_DNB():
         A Maximum a posteriori classifier.
         This class will hold 2 class distributions, one for class 0 and one for class 1, and will predict an instance
         by the class that outputs the highest posterior probability for the given instance.
-
         Input
             - ccd0 : An object contating the relevant parameters and methods for the distribution of class 0.
             - ccd1 : An object contating the relevant parameters and methods for the distribution of class 1.
         """
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        self.ccd0 = ccd0
+        self.ccd1 = ccd1
 
     def predict(self, x):
         """
         Predicts the instance class using the 2 distribution objects given in the object constructor.
-
         Input
             - An instance to predict.
         Output
             - 0 if the posterior probability of class 0 is higher and 1 otherwise.
         """
         pred = None
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        x_features = x[:-1]  # Exclude the class label
+        likelihood_class0 = self.ccd0.get_instance_likelihood(x_features)
+        likelihood_class1 = self.ccd1.get_instance_likelihood(x_features)
+
+        pred = 0 if likelihood_class0 > likelihood_class1 else 1
         return pred
 
     def compute_accuracy(self, test_set):
         """
         Compute the accuracy of a given a testset using a MAP classifier object.
-
         Input
             - test_set: The test_set for which to compute the accuracy (Numpy array).
         Ouput
             - Accuracy = #Correctly Classified / #test_set size
         """
         acc = None
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        pass
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+        num_correct = 0
+        for instance in test_set:
+            prediction = MAPClassifier_DNB.predict(instance[:-1])
+            true_label = instance[-1]
+            if prediction == true_label:
+                num_correct += 1
+
+        acc = num_correct / test_set.shape[0]
         return acc
