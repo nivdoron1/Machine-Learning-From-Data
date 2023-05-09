@@ -516,8 +516,8 @@ class MAPClassifier_DNB():
         """
         pred = None
         x_features = x[:-1]  # Exclude the class label
-        likelihood_class0 = self.ccd0.get_instance_likelihood(x_features)
-        likelihood_class1 = self.ccd1.get_instance_likelihood(x_features)
+        likelihood_class0 = self.ccd0.get_instance_posterior(x_features)
+        likelihood_class1 = self.ccd1.get_instance_posterior(x_features)
 
         pred = 0 if likelihood_class0 > likelihood_class1 else 1
         return pred
