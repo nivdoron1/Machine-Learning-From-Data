@@ -1,4 +1,10 @@
-    import numpy as np
+###### Your ID ######
+# ID1: 322547282
+# ID2: 337933568
+#####################
+
+
+import numpy as np
 
     class conditional_independence():
 
