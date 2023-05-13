@@ -75,9 +75,9 @@ import numpy as np
                     
             # Check if X and Y are independent
             if joint_X_Y == marginal_X_Y:
-                return True
-            else:
                 return False
+            else:
+                return True
 
         def is_X_Y_given_C_independent(self):
             """
