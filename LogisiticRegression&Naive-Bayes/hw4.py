@@ -479,7 +479,7 @@ class NaiveBayesGaussian(object):
 
             for i, cls in enumerate(self.classes):
                 gmm = self.gmms[i]
-                likelihood = gmm_pdf(x.reshape(-1, 1), gmm.get_dist_params()[2], gmm.get_dist_params()[0], gmm.get_dist_params()[1])
+                likelihood = gmm_pdf(x, weights=gmm.get_dist_params()[0],mus=gmm.get_dist_params()[1],sigmas=gmm.get_dist_params()[2])
                 likelihoods.append(likelihood)
 
             likelihoods = np.array(likelihoods)
