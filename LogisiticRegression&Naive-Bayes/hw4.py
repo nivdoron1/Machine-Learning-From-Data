@@ -58,8 +58,8 @@ class LogisticRegressionGD(object):
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        X = (X - np.mean(X,axis=0)) / ( np.max(X,axis=0) - np.min(X,axis=0))
-        y = (y - np.mean(y,axis=0)) / ( np.max(y,axis=0) - np.min(y,axis=0))
+        #X = (X - np.mean(X,axis=0)) / ( np.max(X,axis=0) - np.min(X,axis=0))
+        #y = (y - np.mean(y,axis=0)) / ( np.max(y,axis=0) - np.min(y,axis=0))
         X = np.concatenate([np.ones((X.shape[0], 1)), X], axis=1)
 
 
@@ -211,6 +211,7 @@ def cross_validation(X, y, folds, algo, random_state):
 
     return cv_accuracy
 
+
 def norm_pdf(data, mu, sigma):
     """
     Calculate normal desnity function for a given data,
@@ -223,28 +224,21 @@ def norm_pdf(data, mu, sigma):
  
     Returns the normal distribution pdf according to the given mu and sigma for the given x.    
     """
-    p = None
-    ###########################################################################
-    # TODO: Implement the function.                                           #
-    ###########################################################################
     p = (1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-((data - mu)**2) / (2 * sigma**2))
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
     return p
 
 class EM(object):
     """
-    Naive Bayes Classifier using Gaussian Mixture Model (EM) for calculating the likelihood.
+    Naive Bayes Classifier using Gauusian Mixture Model (EM) for calculating the likelihood.
 
     Parameters
     ------------
     k : int
-      Number of Gaussians in each dimension.
+      Number of gaussians in each dimension
     n_iter : int
-      Passes over the training dataset in the EM process.
+      Passes over the training dataset in the EM proccess
     eps: float
-      Minimal change in the cost to declare convergence.
+      minimal change in the cost to declare convergence
     random_state : int
       Random number generator seed for random params initialization.
     """
@@ -254,136 +248,105 @@ class EM(object):
         self.n_iter = n_iter
         self.eps = eps
         self.random_state = random_state
+
         np.random.seed(self.random_state)
-        self.response = {}
-        self.weights =[]
-        self.mus =[]
-        self.sigmas = []
-        self.J_history = []
-        self.costs = []
+
+        self.responsibilities = None
+        self.weights = None
+        self.mus = None
+        self.sigmas = None
+        self.costs = None
+        
 
     def init_params(self, data):
         """
-        Initialize distribution params.
+        Initialize distribution params
         """
-        # self.means = []
-        # self.stds = []
-        # self.response = {}
-        n_samples, n_features = data.shape
-
-        self.weights = np.ones(self.k) / self.k
-        self.mus = np.zeros(self.k)
-        self.sigmas = np.ones(self.k)
-
-        for i in range(self.k):
-            random_indices = np.random.choice(range(len(data)), size=self.k, replace=False)
-            self.mus[i] = data[random_indices[i]]
+        self.costs = []
         
-        # Initialize response dictionary
-        self.response = {}
+        self.mus = np.zeros(self.k)
+        _ = np.random.choice(data.shape[0], size=self.k)
+        self.mus = np.random.uniform(np.min(data), np.max(data), self.k)
+        
+        self.weights = np.ones(self.k) / self.k
 
+        self.responsibilities = np.ones((data.shape[0], self.k)) / self.k
+        self.sigmas = np.random.rand(self.k)
+        
+        
+        
 
     def expectation(self, data):
         """
-        E step - This function should calculate and update the responsibilities.
+        E step - This function should calculate and update the responsibilities
         """
-        n_samples = data.shape[0]
-        n_features = data.shape[1]
+        # Calculate and update the responsibilites numpy array.
+        new_responsabilities = self.weights * norm_pdf(data,self.mus,self.sigmas)
+        new_responsabilities = new_responsabilities / new_responsabilities.sum(axis = 1, keepdims=True)
+        self.responsibilities = new_responsabilities
         
-        self.response = {}
         
-        for i in range(self.k):
-            # Calculate the likelihood of each sample for the current Gaussian component
-            likelihood = norm_pdf(data, self.mus[i], self.sigmas[i])
-            
-            # Multiply the likelihood by the corresponding weight
-            weighted_likelihood = likelihood * self.weights[i]
-            
-            # Store the weighted likelihood as the responsibility for the current Gaussian component
-            self.response[i] = weighted_likelihood
-    
-        # Normalize the responsibilities
-        for i in range(n_samples):
-            sample_sum = sum([self.response[j][i] for j in range(self.k)])
-            for j in range(self.k):
-                self.response[j][i] /= sample_sum
-
     def maximization(self, data):
         """
-        M step - updating distribution params
+        M step - This function should calculate and update the distribution params
         """
-        n_samples = data.shape[0]
+        self.mus = np.sum(self.responsibilities * data, axis=0) / np.sum(self.responsibilities, axis = 0)
+        self.weights = np.sum(self.responsibilities, axis=0) / data.shape[0]        
+        self.sigmas = np.sqrt(np.sum(self.responsibilities * ((data - self.mus) ** 2), axis=0) / np.sum(self.responsibilities, axis = 0))
         
-        # Update weights
-        for i in range(self.k):
-            self.weights[i] = np.mean(self.response[i])
-        
-        # Normalize weights
-        total_weight = np.sum(self.weights)
-        self.weights /= total_weight        
-        # Update means
-        for i in range(self.k):
-            resp = self.response[i].reshape(-1, 1)
-            weighted_sum = np.sum(resp * data, axis=0)
-            self.mus[i] = weighted_sum / np.sum(resp)
-        
-        # Update covariances (variances)
-        for i in range(self.k):
-            resp = self.response[i].reshape(-1, 1)
-            weighted_diff = data - self.mus[i]
-            weighted_sum = np.sum(resp * (weighted_diff ** 2), axis=0)
-            self.sigmas[i] = np.sqrt(weighted_sum / np.sum(resp))
-
-
+    
+     
     def fit(self, data):
         """
         Fit training data (the learning phase).
-        Use init_params and then expectation and maximization functions to find params
+        Use init_params and then expectation and maximization function in order to find params
         for the distribution.
         Store the params in attributes of the EM object.
         Stop the function when the difference between the previous cost and the current is less than eps
         or when you reach n_iter.
         """
-        self.init_params(data)
-        self.J_history = []
         
-        for _ in range(self.n_iter):
-            # E-step
-            self.expectation(data)
-            
-            # M-step
-            self.maximization(data)
-            
-            # Calculate the current cost (negative log-likelihood)
-            cost = self.calculate_cost(data)
-            
-            # Store the cost in the history
-            self.J_history.append(cost)
-            
-            # Check for convergence
-            if len(self.J_history) > 1 and np.abs(self.J_history[-1] - self.J_history[-2]) < self.eps:
-                break
-                
+        # Initialize the params of the data.
+        self.init_params(data)
+        
+        for i in range(self.n_iter):
+          
+          # Expectation Step
+          self.expectation(data)
+          
+          # Maximization step
+          self.maximization(data)
+          
+          # Convergence checking
+          self.costs.append(self.cost(data))
+          if i > 0 and np.abs((self.costs[-2] - self.costs[-1])) < self.eps:
+            break
+
     def get_dist_params(self):
         return self.weights, self.mus, self.sigmas
     
-    def calculate_cost(self, data):
-        """
-        Calculate the current cost (negative log-likelihood).
-        """
-        cost = 0.0
-        n_samples = data.shape[0]
-        
-        for i in range(n_samples):
-            sample_likelihood = 0.0
-            for j in range(self.k):
-                likelihood = norm_pdf(data[i], self.mus[j], self.sigmas[j])
-                sample_likelihood += self.weights[j] * likelihood
-            cost += -np.log(sample_likelihood)
-        
-        return cost
+    def cost(self,data):
+      """
+      Calculates the cost based on the provided data.
 
+      Parameters:
+        self (object): The instance of the class.
+        data (numpy.ndarray): The input data.
 
+      Returns:
+        float: The calculated cost.
+    """
+      total_cost = 0
+      
+      for i in range(data.shape[0]):
+        cost_value = 0
+        sample = data[i]
+        for j in range(self.k):
+          cost_value -= np.log2(self.weights[j] * norm_pdf(sample,self.mus[j],self.sigmas[j]))
+        total_cost += np.log2(cost_value)
+      
+      return total_cost
+    
 
 def gmm_pdf(data, weights, mus, sigmas):
     """
@@ -399,20 +362,11 @@ def gmm_pdf(data, weights, mus, sigmas):
     Returns the GMM distribution pdf according to the given mus, sigmas and weights
     for the given data.    
     """
-    pdf = None
-    ###########################################################################
-    # TODO: Implement the function.                                           #
-    ###########################################################################
-    n_components = len(weights)
-    pdf = np.zeros_like(data)
-
-    for i in range(n_components):
-        component_pdf = weights[i] * norm_pdf(data, mus[i], sigmas[i])
-        pdf += component_pdf
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    pdf = 0
+    
+    for weight, mu, sigma in zip(weights, mus, sigmas):
+        pdf += weight * norm_pdf(data, mu, sigma)
+    
     return pdf
 
 class NaiveBayesGaussian(object):
@@ -431,6 +385,7 @@ class NaiveBayesGaussian(object):
         self.k = k
         self.random_state = random_state
         self.prior = None
+        
 
     def fit(self, X, y):
         """
@@ -443,25 +398,33 @@ class NaiveBayesGaussian(object):
           n_features is the number of features.
         y : array-like, shape = [n_examples]
           Target values.
-        """
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        self.classes = np.unique(y)
-        self.priors = np.zeros(len(self.classes))
-        self.gmms = []
+        """      
+                
+        mus = {}
+        weights = {}
+        sigmas = {}
+        self.classes = {}
 
-        for i, cls in enumerate(self.classes):
-            X_cls = X[y == cls]
-            self.priors[i] = len(X_cls) / len(X)
+        
+        self.prior = np.unique(y, return_counts=True)[1] / y.shape[0]
+        
+        for i in range(len(self.prior)):
+          self.classes[i] = {}
+          
+          for j in range(X.shape[1]):
+            self.classes[i]['prior'] = self.prior[i]
+            EM_by_label = EM(self.k)
+            EM_by_label.fit(X[y.flatten() == i][:, j].reshape(-1,1))
+            weights[j], mus[j] , sigmas[j] = EM_by_label.get_dist_params()
+          
+          self.classes[i]['weights'] , self.classes[i]['mus'] , self.classes[i]['sigmas'] = weights, mus, sigmas
 
-            em_obj = EM(k=self.k)
-            em_obj.fit(X_cls.reshape(-1, 1))
-            self.gmms.append(em_obj)
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
+          mus = {}
+          weights = {}
+          sigmas = {}
+          
 
+        
     def predict(self, X):
         """
         Return the predicted class labels for a given instance.
@@ -469,27 +432,33 @@ class NaiveBayesGaussian(object):
         ----------
         X : {array-like}, shape = [n_examples, n_features]
         """
-        preds = None
-        ###########################################################################
-        # TODO: Implement the function.                                           #
-        ###########################################################################
-        preds = []
-        for x in X:
-            likelihoods = []
+        predictions = []
+        posteriors = []
+        likelihood = 1
 
-            for i, cls in enumerate(self.classes):
-                gmm = self.gmms[i]
-                likelihood = gmm_pdf(x, weights=gmm.get_dist_params()[0],mus=gmm.get_dist_params()[1],sigmas=gmm.get_dist_params()[2])
-                likelihoods.append(likelihood)
-
-            likelihoods = np.array(likelihoods)
-            posterior_probs = self.priors * likelihoods
-            prediction = self.classes[np.argmax(posterior_probs, axis=0)]
-            preds.append(prediction)
-        ###########################################################################
-        #                             END OF YOUR CODE                            #
-        ###########################################################################
-        return preds
+        
+        for data_point in X:
+          class_posteriors = []
+          
+          for label in range(len(self.classes)):
+            
+            for feature in range(X.shape[1]):
+              
+              likelihood = likelihood * (gmm_pdf(data_point[feature], self.classes[label]['weights'][feature], self.classes[label]['mus'][feature],self.classes[label]['sigmas'][feature]))
+            
+            posterior = likelihood * self.prior[label]
+            class_posteriors.append(posterior)
+            likelihood = 1 
+          
+          if (class_posteriors[0] < class_posteriors[1]):
+            posteriors.append(1) 
+          else:
+            posteriors.append(0)   
+            
+        predictions = posteriors
+        
+        return np.array(predictions)
+      
 
 def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     ''' 
@@ -516,90 +485,50 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     best_eps : best eta from cv
     ''' 
 
-    lor_train_acc = None
-    lor_test_acc = None
-    bayes_train_acc = None
-    bayes_test_acc = None
+    lor_train_acc = []
+    lor_test_acc = []
+    bayes_train_acc = []
+    bayes_test_acc = []
 
-    ###########################################################################
-    # TODO: Implement the function.                                           #
-    ###########################################################################
+    lor = LogisticRegressionGD(eta=best_eta, eps=best_eps)
+    lor.fit(x_train, y_train)
 
+    naive_bayes = NaiveBayesGaussian(k=k)
+    naive_bayes.fit(x_train, y_train)
 
-    lor_train_acc = None
-    lor_test_acc = None
-    bayes_train_acc = None
-    bayes_test_acc = None
+    lor_train_acc_ = np.count_nonzero(lor.predict(x_train) == y_train) / x_train.shape[0]
+    lor_train_acc.append( lor_train_acc_)
 
-    # Fit Logistic Regression model
-    lr_model = LogisticRegressionGD(eta=best_eta, eps=best_eps)
-    lr_model.fit(x_train, y_train)
+    lor_test_acc_ = np.count_nonzero(lor.predict(x_test) == y_test) / x_test.shape[0]
+    lor_test_acc.append(lor_test_acc_)
 
+    bayes_train_acc_ = np.count_nonzero(naive_bayes.predict(x_train) == y_train) / x_train.shape[0]
+    bayes_train_acc.append(bayes_train_acc_)
+    
+    bayes_test_acc_ = np.count_nonzero(naive_bayes.predict(x_test) == y_test) / x_test.shape[0]
+    bayes_test_acc.append(bayes_test_acc_)
 
-    # Fit Naive Bayes model
-    nb_model = NaiveBayesGaussian(k=k)
-    nb_model.fit(x_train, y_train)
-    result_dict = {}
-    list_models = [lr_model]
-    # Evaluate models
-    for model in list_models:
-        model_train_acc = model.accuracy(x_train,y_train)
-        model_test_acc = model.accuracy(x_train,y_train)
-        #print(f"{model.__class.__name__} training accuracy: {train_preds}, test accuracy: {test_preds}")
-        plot_decision_regions(X=x_train, y=y_train, classifier=model,
-                              title= " Decision Boundaries")
-        #result_dict[f'{model.__class.__name__.lower()}_train_acc'] = model_train_acc
-        #result_dict[f'{model.__class.__name__.lower()}_test_acc'] = model_test_acc
+  # Plot decision boundaries for each model
+    plot_decision_regions(x_train, y_train, lor, title="Logistic Regression Decision Boundary")
+    plot_decision_regions(x_train, y_train, naive_bayes, title="Naive Bayes Decision Boundary")
 
-        plt.plot(np.arange(len(lr_model.Js)), lr_model.Js)
-        plt.xlabel('Iterations')
-        plt.ylabel('Loss')
-        plt.title('Loss as a function of iterations')
-        plt.show()
+    # Plot cost vs. iteration number for Logistic Regression
+    plt.plot(range(len(lor.Js)), lor.Js)
+    plt.xlabel("Iteration")
+    plt.ylabel("Cost")
+    plt.title("Logistic Regression: Cost by number of Iteration")
+    plt.show()
 
-        if model == list_models[0]:
-            lor_train_acc = model_train_acc
-            lor_test_acc = model_test_acc
-        else:
-            bayes_train_acc = model_train_acc
-            bayes_test_acc = model_test_acc
     print("Decision boundary of Logistic Regression: This graph visualizes how the Logistic Regression model has learnt to classify the data. If the decision boundary effectively separates the data points of different classes, it suggests that the model is making good predictions.")
     print("Cost function of Logistic Regression over iterations: This graph shows the learning process of the Logistic Regression model. If the cost decreases rapidly and then plateaus, it indicates that the model has converged to a solution and the error has been minimized.")
-
-    print("Decision boundary of Naive Bayes Gaussian: This graph shows the classification decisions made by the Naive Bayes Gaussian model. If the decision boundary successfully separates data points of different classes, the model is performing well.
-
+    print("Decision boundary of Naive Bayes Gaussian: This graph shows the classification decisions made by the Naive Bayes Gaussian model. If the decision boundary successfully separates data points of different classes, the model is performing well.")
     print("Cost function of Naive Bayes Gaussian over iterations: Similar to the second graph, this shows the learning process of the Naive Bayes model. A rapid decrease followed by a plateau indicates successful learning and minimal error.")
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
     ###########################################################################
     return {'lor_train_acc': lor_train_acc,
             'lor_test_acc': lor_test_acc,
             'bayes_train_acc': bayes_train_acc,
             'bayes_test_acc': bayes_test_acc}
 
-def generate_datasets():
-    from scipy.stats import multivariate_normal
-    '''
-    This function should have no input.
-    It should generate the two dataset as described in the jupyter notebook,
-    and return them according to the provided return dict.
-    '''
-    dataset_a_features = None
-    dataset_a_labels = None
-    dataset_b_features = None
-    dataset_b_labels = None
-    ###########################################################################
-    # TODO: Implement the function.                                           #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
-    return{'dataset_a_features': dataset_a_features,
-           'dataset_a_labels': dataset_a_labels,
-           'dataset_b_features': dataset_b_features,
-           'dataset_b_labels': dataset_b_labels
-           }
 
 # Function for ploting the decision boundaries of a model
 def plot_decision_regions(X, y, classifier, resolution=0.01, title=""):
