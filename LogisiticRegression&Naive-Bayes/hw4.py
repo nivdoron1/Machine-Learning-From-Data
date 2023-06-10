@@ -563,6 +563,12 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
         else:
             bayes_train_acc = model_train_acc
             bayes_test_acc = model_test_acc
+    print("Decision boundary of Logistic Regression: This graph visualizes how the Logistic Regression model has learnt to classify the data. If the decision boundary effectively separates the data points of different classes, it suggests that the model is making good predictions.")
+    print("Cost function of Logistic Regression over iterations: This graph shows the learning process of the Logistic Regression model. If the cost decreases rapidly and then plateaus, it indicates that the model has converged to a solution and the error has been minimized.")
+
+    print("Decision boundary of Naive Bayes Gaussian: This graph shows the classification decisions made by the Naive Bayes Gaussian model. If the decision boundary successfully separates data points of different classes, the model is performing well.
+
+    print("Cost function of Naive Bayes Gaussian over iterations: Similar to the second graph, this shows the learning process of the Naive Bayes model. A rapid decrease followed by a plateau indicates successful learning and minimal error.")
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
