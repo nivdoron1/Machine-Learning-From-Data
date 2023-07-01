@@ -92,7 +92,6 @@ def kmeans_pp(X, k, p ,max_iter=100):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    c = 1
     centroids=(X[np.random.choice(X.shape[0])]) 
     while len(centroids) < k:
         distances = lp_distance(X, centroids, p)
@@ -101,7 +100,6 @@ def kmeans_pp(X, k, p ,max_iter=100):
         probs = weights / np.sum(weights)
         new_centroid_index = np.random.choice(a=X.shape[0], p=probs)
         centroids = np.vstack((centroids, X[new_centroid_index]))
-        c += 1
     
     classes = np.zeros_like(X.shape[0]) 
 
