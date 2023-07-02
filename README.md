@@ -1,7 +1,5 @@
 <h1>Machine Learning from Data 🤖📊</h1>
 
-# Machine Learning Course Repository
-
 Welcome to the repository for the Machine Learning course! This repository contains resources, code examples, datasets, and assignments to help you learn and understand various topics in machine learning. In this readme file, we will provide an overview of the repository and instructions on how to navigate and utilize its contents effectively.
 
 ## Repository Structure
