@@ -40,8 +40,4 @@ To get started with this repository, follow these steps:
 
 
 
-## Feedback and Support
-
-If you have any feedback, questions, or need support regarding the repository or the course materials, please don't hesitate to contact us. You can reach us by [email/issue tracker/communication channel].
-
 We hope this repository helps you in your journey to learn and master machine learning techniques. Happy learning!
