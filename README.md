@@ -25,7 +25,7 @@ To get started with this repository, follow these steps:
 1. Clone the repository to your local machine using the command:
 
    ```
-   git clone <repository-url>
+   git clone https://github.com/EthanFajnkuchen/Machine-Learning-From-Data.git
    ```
 
    Alternatively, you can download the repository as a ZIP file and extract it to a directory of your choice.
@@ -39,9 +39,5 @@ To get started with this repository, follow these steps:
 5. Complete the assignments to test your understanding and reinforce your knowledge. Instructions for each assignment can be found in the respective folders.
 
 
-
-## Feedback and Support
-
-If you have any feedback, questions, or need support regarding the repository or the course materials, please don't hesitate to contact us. You can reach us by [email/issue tracker/communication channel].
 
 We hope this repository helps you in your journey to learn and master machine learning techniques. Happy learning!
